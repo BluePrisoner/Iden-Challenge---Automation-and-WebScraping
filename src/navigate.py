@@ -1,4 +1,4 @@
-from utils import log, wait_for
+from src.utils import log, wait_for
 
 
 async def navigate_to_table(page, settings: dict, selectors: dict):

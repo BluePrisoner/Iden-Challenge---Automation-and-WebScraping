@@ -1,5 +1,5 @@
 import json
-from utils import log
+from .utils import log
 
 
 def export_to_json(data, output_path: str):

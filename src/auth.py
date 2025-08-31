@@ -1,4 +1,5 @@
 import os
+import json
 from playwright.async_api import Browser, BrowserContext, Page, TimeoutError
 from src.utils import log
 
@@ -16,7 +17,7 @@ async def perform_login(page: Page, settings: dict, selectors: dict):
     await page.fill(selectors["login"]["password"], settings["password"])
     await page.click(selectors["login"]["submit"])
 
-    # Wait for successful login indicator (customize selector as needed)
+    # Wait for successful login indicator
     try:
         await page.wait_for_selector(selectors["login"]["success_indicator"], timeout=10000)
         log("Login successful.")
@@ -32,16 +33,21 @@ async def ensure_session(
 ) -> BrowserContext:
     """
     Ensure we have a valid logged-in session.
-    If a saved session exists, reuse it.
+    If a saved session exists and is valid JSON, reuse it.
     Otherwise perform login and save session.
     """
-    storage_file = settings["storage_state"]
+    storage_file = settings["storage_state_file"]
 
-    # Reuse existing session if possible
+    # Try reusing session only if file exists and contains valid JSON
     if not force_login and os.path.exists(storage_file):
-        log("Reusing existing session...")
-        context = await browser.new_context(storage_state=storage_file)
-        return context
+        try:
+            with open(storage_file, "r", encoding="utf-8") as f:
+                json.load(f)  # validate JSON
+            log("Reusing existing session...")
+            context = await browser.new_context(storage_state=storage_file)
+            return context
+        except (json.JSONDecodeError, OSError):
+            log("Invalid or empty storage_state.json, performing fresh login...")
 
     # Otherwise perform fresh login
     log("No valid session found, logging in again...")
@@ -50,10 +56,8 @@ async def ensure_session(
     await perform_login(page, settings, selectors)
 
     # Save session for reuse
+    os.makedirs(os.path.dirname(storage_file), exist_ok=True)
     await context.storage_state(path=storage_file)
     log(f"Session saved to {storage_file}")
 
     return context
-
-
-
