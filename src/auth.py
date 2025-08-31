@@ -1,7 +1,7 @@
 import os
 import json
 from playwright.async_api import Browser, BrowserContext, Page, TimeoutError
-from src.utils import log
+from src.utils import log, save_storage_state
 
 
 async def perform_login(page: Page, settings: dict, selectors: dict):
@@ -50,40 +50,56 @@ async def perform_login(page: Page, settings: dict, selectors: dict):
         await page.screenshot(path="login_failed.png")
         raise RuntimeError("Login failed: success indicator not found.")
 
+    # ✅ Capture cookies, localStorage, and sessionStorage for debugging
+    cookies = await page.context.cookies()
+    local_storage = await page.evaluate("JSON.stringify(localStorage)")
+    session_storage = await page.evaluate("JSON.stringify(sessionStorage)")
+
+    # Print for debug
+    print("Cookies:", json.dumps(cookies, indent=2))
+    print("LocalStorage:", local_storage)
+    print("SessionStorage:", session_storage)
+
+    return {
+        "cookies": cookies,
+        "localStorage": json.loads(local_storage),
+        "sessionStorage": json.loads(session_storage),
+    }
+
 
 async def ensure_session(
     browser: Browser,
     settings: dict,
     selectors: dict,
-    force_login: bool = False,
+    force_login: bool = True,
 ) -> BrowserContext:
-    """
-    Ensure we have a valid logged-in session.
-    If a saved session exists and is valid JSON, reuse it.
-    Otherwise perform login and save session.
-    """
     storage_file = settings["storage_state_file"]
 
-    # Try reusing session only if file exists and contains valid JSON
     if not force_login and os.path.exists(storage_file):
         try:
             with open(storage_file, "r", encoding="utf-8") as f:
-                json.load(f)  # validate JSON
+                json.load(f)
             log("Reusing existing session...")
-            context = await browser.new_context(storage_state=storage_file)
-            return context
+            return await browser.new_context(storage_state=storage_file)
         except (json.JSONDecodeError, OSError):
-            log("Invalid or empty storage_state.json, performing fresh login...")
+            log("Invalid session, will re-login...")
 
-    # Otherwise perform fresh login
-    log("No valid session found, logging in again...")
+    # Perform fresh login
+    log("Performing fresh login...")
     context = await browser.new_context()
     page = await context.new_page()
-    await perform_login(page, settings, selectors)
+    session_data = await perform_login(page, settings, selectors)
 
-    # Save session for reuse
+
+
+    # Make sure we wait for final page (session cookies + localStorage applied)
+    await page.wait_for_load_state("networkidle")
+
+    # ✅ Save storage_state.json + session_id snapshot
     os.makedirs(os.path.dirname(storage_file), exist_ok=True)
-    await context.storage_state(path=storage_file)
+    await save_storage_state(context, page,storage_file)
+    
+
     log(f"Session saved to {storage_file}")
 
     return context

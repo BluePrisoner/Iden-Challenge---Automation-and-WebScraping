@@ -10,7 +10,7 @@ from src.auth import ensure_session
 from src.navigate import navigate_to_table
 from src.scrape import scrape_table
 from src.export import export_to_json
-from src.utils import log
+from src.utils import log, save_storage_state
 
 
 def load_config():
@@ -26,7 +26,7 @@ def load_config():
 
     settings["username"] = os.getenv("APP_USERNAME")
     settings["password"] = os.getenv("APP_PASSWORD")
-    settings["base_url"] = os.getenv("BASE_URL", settings["base_url"])
+    settings["base_url"] = os.getenv("BASE_URL")
     settings["github_repo_url"] = os.getenv("GITHUB_REPO_URL")
 
     return settings, selectors
@@ -42,10 +42,11 @@ async def main(force_login: bool = False, output_file: Optional[str] = None):
             browser, settings, selectors, force_login=force_login
         )
 
+
         page = await context.new_page()
 
         # Navigate to product table
-        await navigate_to_table(page, settings, selectors)
+        # await navigate_to_table(page, settings, selectors)
 
         # Scrape product data
         products = await scrape_table(page, selectors, settings)

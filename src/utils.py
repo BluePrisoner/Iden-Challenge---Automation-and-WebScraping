@@ -34,5 +34,27 @@ async def retry(coro_func, retries: int = 3, delay: float = 1.0):
             else:
                 raise
 
+# utils/storage_helper.py
+import json
+import os
 
 
+async def save_storage_state(context, page, storage_file: str):
+    """Save cookies, localStorage, and sessionStorage into a single JSON file."""
+    os.makedirs(os.path.dirname(storage_file), exist_ok=True)
+
+    # Save base Playwright storage (cookies + localStorage)
+    await context.storage_state(path=storage_file)
+
+    # Grab sessionStorage from the logged-in page
+    session_storage = await page.evaluate("JSON.stringify(sessionStorage)")
+
+    # Merge sessionStorage into the saved file
+    with open(storage_file, "r+", encoding="utf-8") as f:
+        data = json.load(f)
+        data["sessionStorage"] = json.loads(session_storage)
+        f.seek(0)
+        json.dump(data, f, indent=2)
+        f.truncate()
+
+    print(f"✅ Storage state (including sessionStorage) saved at {storage_file}")
