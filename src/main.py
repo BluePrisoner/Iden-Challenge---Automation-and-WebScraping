@@ -4,6 +4,7 @@ import yaml
 import os
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
+from typing import Optional
 
 from src.auth import ensure_session
 from src.navigate import navigate_to_table
@@ -31,7 +32,8 @@ def load_config():
     return settings, selectors
 
 
-async def main(force_login: bool = False, output_file: str = None):
+async def main(force_login: bool = False, output_file: Optional[str] = None):
+
     settings, selectors = load_config()
 
     async with async_playwright() as p:
