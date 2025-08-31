@@ -1,0 +1,25 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+.venv/
+
+# Environment variables
+.env
+
+# Playwright storage state (session)
+data/storage_state.json
+
+# Output data
+data/output/*.json
+
+# VSCode settings
+.vscode/
+
+# Logs
+*.log
+
+
+
