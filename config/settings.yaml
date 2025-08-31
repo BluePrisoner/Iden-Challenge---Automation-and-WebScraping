@@ -1,3 +1,21 @@
+# General application settings
+
+# Base URL of the application (overridden if BASE_URL is set in .env)
+base_url: "https://example.com"
+
+# Paths (relative to base_url)
+login_path: "/login"
+submit_script_path: "/submit-script"
+
+# Data export
+output_file: "data/output/products.json"
+
+# Session state
+storage_state_file: "data/storage_state.json"
+
+# Pagination strategy
+# Options: "next_button", "load_more", "infinite_scroll"
+pagination: "next_button"
 
 
 

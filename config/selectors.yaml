@@ -1,3 +1,25 @@
+# CSS/XPath selectors for key elements
+
+login:
+  username: 'input[name="username"]'
+  password: 'input[name="password"]'
+  submit: 'button[type="submit"]'
+
+navigation:
+  start_journey: 'button:has-text("Start Journey")'
+  continue_search: 'button:has-text("Continue Search")'
+  inventory_section: 'button:has-text("Inventory Section")'
+  show_product_table: 'button:has-text("Show Product Table")'
+
+table:
+  container: 'table'
+  headers: 'table thead tr th'
+  rows: 'table tbody tr'
+  cells: 'td'
+
+pagination:
+  next_button: 'button:has-text("Next")'
+  load_more: 'button:has-text("Load More")'
 
 
 
