@@ -1,9 +1,15 @@
 # CSS/XPath selectors for key elements
 
 login:
-  username: 'input[name="username"]'
-  password: 'input[name="password"]'
-  submit: 'button[type="submit"]'
+  username: "input#email"
+  password: "input#password"
+  submit: "button[type='submit']"
+  launch_challenge: "button:has-text('Launch Challenge')"
+  start_journey: "button:has-text('Start Journey')"
+  continue_search: "button:has-text('Continue Search')"
+  success_indicator: "button:has-text('Inventory Section')"
+
+
 
 navigation:
   start_journey: 'button:has-text("Start Journey")'

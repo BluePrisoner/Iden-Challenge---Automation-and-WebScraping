@@ -4,7 +4,7 @@
 base_url: "https://example.com"
 
 # Paths (relative to base_url)
-login_path: "/login"
+login_path: ""
 submit_script_path: "/submit-script"
 
 # Data export

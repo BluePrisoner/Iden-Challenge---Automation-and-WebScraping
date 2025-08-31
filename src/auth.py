@@ -5,23 +5,49 @@ from src.utils import log
 
 
 async def perform_login(page: Page, settings: dict, selectors: dict):
-    """Perform login with username and password using provided selectors."""
+    """Perform login and navigate through the challenge setup."""
     log("Performing login...")
 
-    await page.goto(settings["base_url"], wait_until="networkidle")
+    # Go directly to login page
+    login_url = settings["base_url"].rstrip("/") + settings.get("login_path", "")
+    await page.goto(login_url, wait_until="networkidle")
 
-    # Wait for username field
+    # Wait for username field and fill form
     await page.wait_for_selector(selectors["login"]["username"])
-
     await page.fill(selectors["login"]["username"], settings["username"])
     await page.fill(selectors["login"]["password"], settings["password"])
     await page.click(selectors["login"]["submit"])
 
-    # Wait for successful login indicator
+    # Step 1: Launch Challenge (if exists)
+    try:
+        await page.wait_for_selector(selectors["login"]["launch_challenge"], timeout=5000)
+        await page.click(selectors["login"]["launch_challenge"])
+        log("Clicked 'Launch Challenge'")
+    except TimeoutError:
+        log("No 'Launch Challenge' button found — continuing...")
+
+    # Step 2: Start Journey (if exists)
+    try:
+        await page.wait_for_selector(selectors["login"]["start_journey"], timeout=5000)
+        await page.click(selectors["login"]["start_journey"])
+        log("Clicked 'Start Journey'")
+    except TimeoutError:
+        log("No 'Start Journey' button found — continuing...")
+
+    # Step 3: Continue Search
+    try:
+        await page.wait_for_selector(selectors["login"]["continue_search"], timeout=10000)
+        await page.click(selectors["login"]["continue_search"])
+        log("Clicked 'Continue Search'")
+    except TimeoutError:
+        raise RuntimeError("Login failed: 'Continue Search' button not found.")
+
+    # Step 4: Success indicator = Inventory Section
     try:
         await page.wait_for_selector(selectors["login"]["success_indicator"], timeout=10000)
-        log("Login successful.")
+        log("Login successful. 'Inventory Section' button found.")
     except TimeoutError:
+        await page.screenshot(path="login_failed.png")
         raise RuntimeError("Login failed: success indicator not found.")
 
 
