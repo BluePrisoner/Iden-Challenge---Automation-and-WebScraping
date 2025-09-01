@@ -18,6 +18,20 @@ navigation:
   inventory_section: 'button:has-text("Inventory Section")'
   show_product_table: 'button:has-text("Show Product Table")'
 
+product_card: "div.rounded-lg.border.bg-card"   # wrapper for each product
+
+title: "h3.font-semibold"                       # product name
+category: "div.inline-flex"                     # category tag
+id: "p.text-xs"                                 # product ID
+cost: "dt:has-text('Cost:') + dd"
+details: "dt:has-text('Details:') + dd"
+inventory: "dt:has-text('Inventory:') + dd"
+modified: "dt:has-text('Modified:') + dd"
+weight: "dt:has-text('Weight') + dd"
+composition: "dt:has-text('Composition:') + dd"
+updated: "div.items-center span"                # footer updated date
+
+
 table:
   container: 'table'
   headers: 'table thead tr th'
