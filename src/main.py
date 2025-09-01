@@ -5,11 +5,11 @@ import os
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
 from typing import Optional
+from pathlib import Path
+import json
 
 from src.auth import ensure_session
-from src.inventory import goto_inventory_section
 from src.scrape import scrape_cards
-from src.export import export_to_json
 from src.utils import log, save_storage_state
 
 
@@ -32,28 +32,29 @@ def load_config():
     return settings, selectors
 
 
-async def main(force_login: bool = False, output_file: Optional[str] = None):
+async def main(force_login: bool = True, output_file: Optional[str] = None):
 
     settings, selectors = load_config()
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=False)
         context, page = await ensure_session(
-            browser, settings, selectors, force_login=force_login
+            browser, settings, selectors, force_login=True
         )
-
-
-        # Navigate to product table
-        await goto_inventory_section(page, settings, selectors)
 
         # Scrape product data
         products = await scrape_cards(page,selectors, settings)
 
         # Export results
-        output_path = output_file or settings["output_file"]
-        export_to_json(products, output_path)
+        # --- 6. Save JSON ---
+        output_file = settings.get("output_file")
+        if output_file:
+            out_path = Path(output_file)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            with out_path.open("w", encoding="utf-8") as f:
+                json.dump(products, f, indent=2, ensure_ascii=False)
 
-        log(f"Extraction complete. Saved {len(products)} products to {output_path}")
+        log(f"Extraction complete. Saved {len(products)} products to {output_file}")
 
         await browser.close()
 

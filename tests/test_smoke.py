@@ -3,7 +3,6 @@ import pytest
 from playwright.async_api import async_playwright
 
 from src.auth import ensure_session
-from src.inventory import goto_inventory_section
 from src.scrape import scrape_cards
 
 

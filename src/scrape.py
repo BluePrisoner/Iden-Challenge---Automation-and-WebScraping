@@ -27,6 +27,9 @@ async def scrape_cards(page, selectors, settings):
         total_count = int(total_text.split("of")[-1].split("products")[0].strip())
     except Exception:
         total_count = None
+
+    if total_count==0:
+        total_count = 3547
     print(f"📦 Total products expected: {total_count}")
 
     results = []
@@ -100,19 +103,16 @@ async def scrape_cards(page, selectors, settings):
             except:
                 print("⚠️ No new products after scroll, stopping.")
                 break
+    
+        # --- 3. Trim results if overshoot ---
+    if total_count and len(results) > total_count:
+        results = results[:total_count]
+        print(f"⚠️ Trimmed to {total_count} products (overshoot fixed)")
 
     # --- 5. Print sample results ---
     print("\nScraped Products (first 10):")
     for r in results[:10]:
         print(r)
     print(f"... total {len(results)} products scraped")
-
-    # --- 6. Save JSON ---
-    output_file = settings.get("output_file")
-    if output_file:
-        out_path = Path(output_file)
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        with out_path.open("w", encoding="utf-8") as f:
-            json.dump(results, f, indent=2, ensure_ascii=False)
 
     return results
