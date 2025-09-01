@@ -44,7 +44,9 @@ async def perform_login(page: Page, settings: dict, selectors: dict):
 
     # Step 4: Success indicator = Inventory Section
     try:
-        await page.wait_for_selector(selectors["login"]["success_indicator"], timeout=10000)
+        await page.wait_for_selector(selectors["login"]["inventory_section"], timeout=10000)
+        await page.click(selectors["login"]["inventory_section"])
+        log("Clicked 'Inventory Section'")
         log("Login successful. 'Inventory Section' button found.")
     except TimeoutError:
         await page.screenshot(path="login_failed.png")
@@ -72,7 +74,11 @@ async def ensure_session(
     settings: dict,
     selectors: dict,
     force_login: bool = True,
-) -> BrowserContext:
+) -> tuple[BrowserContext, Page]:
+    """
+    Ensure a logged-in session is available.
+    Always returns the same Page so no extra tabs are opened.
+    """
     storage_file = settings["storage_state_file"]
 
     if not force_login and os.path.exists(storage_file):
@@ -80,26 +86,27 @@ async def ensure_session(
             with open(storage_file, "r", encoding="utf-8") as f:
                 json.load(f)
             log("Reusing existing session...")
-            return await browser.new_context(storage_state=storage_file)
+
+            context = await browser.new_context(storage_state=storage_file)
+            page = await context.new_page()
+            await page.goto(settings["base_url"], wait_until="domcontentloaded")
+            return context, page
         except (json.JSONDecodeError, OSError):
             log("Invalid session, will re-login...")
 
-    # Perform fresh login
+    # Fresh login
     log("Performing fresh login...")
     context = await browser.new_context()
     page = await context.new_page()
-    session_data = await perform_login(page, settings, selectors)
 
+    await perform_login(page, settings, selectors)
 
-
-    # Make sure we wait for final page (session cookies + localStorage applied)
+    # Wait for app fully loaded
     await page.wait_for_load_state("networkidle")
 
-    # ✅ Save storage_state.json + session_id snapshot
+    # Save state
     os.makedirs(os.path.dirname(storage_file), exist_ok=True)
-    await save_storage_state(context, page,storage_file)
-    
-
+    await save_storage_state(context, page, storage_file)
     log(f"Session saved to {storage_file}")
 
-    return context
+    return context, page

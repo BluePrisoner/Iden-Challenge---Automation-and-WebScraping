@@ -7,8 +7,8 @@ from playwright.async_api import async_playwright
 from typing import Optional
 
 from src.auth import ensure_session
-from src.navigate import navigate_to_table
-from src.scrape import scrape_table
+from src.inventory import goto_inventory_section
+from src.scrape import scrape_cards
 from src.export import export_to_json
 from src.utils import log, save_storage_state
 
@@ -38,18 +38,16 @@ async def main(force_login: bool = False, output_file: Optional[str] = None):
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=False)
-        context = await ensure_session(
+        context, page = await ensure_session(
             browser, settings, selectors, force_login=force_login
         )
 
 
-        page = await context.new_page()
-
         # Navigate to product table
-        # await navigate_to_table(page, settings, selectors)
+        await goto_inventory_section(page, settings, selectors)
 
         # Scrape product data
-        products = await scrape_table(page, selectors, settings)
+        products = await scrape_cards(page, settings)
 
         # Export results
         output_path = output_file or settings["output_file"]

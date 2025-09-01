@@ -8,6 +8,7 @@ login:
   start_journey: "button:has-text('Start Journey')"
   continue_search: "button:has-text('Continue Search')"
   success_indicator: "button:has-text('Inventory Section')"
+  inventory_section: "button:has-text('Inventory Section')"
 
 
 

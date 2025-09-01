@@ -1,71 +1,61 @@
-from src.utils import log, wait_for
+# src/scrape_cards.py
+import asyncio
+from src.utils import log
 
-
-async def scrape_table(page, selectors: dict, settings: dict):
+async def scrape_cards(page, settings: dict):
     """
-    Scrape all product data from the table, handling pagination or lazy-loading.
-    Returns a list of dictionaries, one per row.
+    Scrape product cards from an infinite-scroll inventory page.
+    Each card contains title, category, ID, cost, details, inventory, modified, weight, composition, etc.
     """
-    log("🔍 Scraping product table...")
 
-    all_rows = []
+    log("🔎 Starting infinite scroll scraping...")
 
-    while True:
-        # Wait for rows to be visible
-        await wait_for(page.locator(selectors["table"]["rows"]))
+    products = []
 
-        # Extract headers
-        headers = await page.locator(selectors["table"]["headers"]).all_inner_texts()
-        headers = [h.strip() for h in headers]
+    # --- STEP 1: Find total count from "Showing X of Y products"
+    total_selector = "div.text-sm.text-muted-foreground span.font-medium.text-foreground:last-of-type"
+    await page.wait_for_selector(total_selector)
+    total_count = int(await page.inner_text(total_selector))
+    log(f"📦 Expecting {total_count} products...")
 
-        # Extract rows
-        row_elements = await page.locator(selectors["table"]["rows"]).all()
-        for row in row_elements:
-            cells = await row.locator(selectors["table"]["cells"]).all_inner_texts()
-            cells = [c.strip() for c in cells]
-            row_data = dict(zip(headers, cells))
-            all_rows.append(row_data)
+    # --- STEP 2: Keep scrolling until we've collected all products
+    seen = set()
 
-        log(f"📦 Collected {len(all_rows)} rows so far...")
+    while len(products) < total_count:
+        # Scroll to bottom
+        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        await asyncio.sleep(1.5)  # give time for lazy load
 
-        # Handle pagination based on strategy
-        pagination_type = settings.get("pagination", "next_button")
+        # Select all cards
+        cards = await page.locator("div.rounded-lg.border.bg-card").all()
 
-        if pagination_type == "next_button":
-            next_button = page.locator(selectors["pagination"]["next_button"])
-            if await next_button.is_enabled():
-                await next_button.click()
-                await page.wait_for_load_state("networkidle")
+        for card in cards:
+            # Get ID (unique)
+            product_id = await card.locator("p.text-xs.text-muted-foreground.font-mono").inner_text()
+            if product_id in seen:
                 continue
-            else:
-                break
+            seen.add(product_id)
 
-        elif pagination_type == "load_more":
-            load_more_btn = page.locator(selectors["pagination"]["load_more"])
-            if await load_more_btn.is_visible():
-                await load_more_btn.click()
-                await page.wait_for_load_state("networkidle")
-                continue
-            else:
-                break
+            title = await card.locator("h3").inner_text()
+            category = await card.locator("div.inline-flex").inner_text()
 
-        elif pagination_type == "infinite_scroll":
-            prev_count = len(all_rows)
-            await page.mouse.wheel(0, 2000)
-            await page.wait_for_timeout(1500)
-            new_count = len(
-                await page.locator(selectors["table"]["rows"]).all_inner_texts()
-            )
-            if new_count > prev_count:
-                continue
-            else:
-                break
-        else:
-            log(f"⚠️ Unknown pagination type: {pagination_type}, stopping scrape.")
-            break
+            # Extract details from <dl>
+            rows = await card.locator("dl div.flex").all()
+            details = {}
+            for row in rows:
+                key = (await row.locator("dt").inner_text()).rstrip(":")
+                value = await row.locator("dd").inner_text()
+                details[key] = value
 
-    log(f"✅ Finished scraping. Total rows collected: {len(all_rows)}")
-    return all_rows
+            product = {
+                "id": product_id.replace("ID: ", ""),
+                "title": title,
+                "category": category,
+                **details,
+            }
+            products.append(product)
 
+        log(f"✅ Loaded {len(products)}/{total_count} products so far...")
 
-
+    log(f"🎉 Scraping finished. Collected {len(products)} products.")
+    return products

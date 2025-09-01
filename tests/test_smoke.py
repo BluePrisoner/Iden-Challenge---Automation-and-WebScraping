@@ -3,8 +3,8 @@ import pytest
 from playwright.async_api import async_playwright
 
 from src.auth import ensure_session
-from src.navigate import navigate_to_table
-from src.scrape import scrape_table
+from src.inventory import goto_inventory_section
+from src.scrape import scrape_cards
 
 
 @pytest.mark.asyncio
@@ -15,14 +15,19 @@ async def test_basic_flow():
     settings, selectors = load_config()
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        context = await ensure_session(browser, settings, selectors)
-        page = await context.new_page()
+        browser = await p.chromium.launch(headless=False, slow_mo=500)
 
-        await navigate_to_table(page, settings, selectors)
-        data = await scrape_table(page, selectors, settings)
+        # ✅ Unpack context and page
+        context, page = await ensure_session(browser, settings, selectors)
+
+        # ✅ Use the existing page, not browser
+        #page = await goto_inventory_section(page, settings, selectors)
+
+        data = await scrape_cards(page, settings)
 
         assert isinstance(data, list)
         assert all(isinstance(row, dict) for row in data)
+
+        await page.pause()
 
         await browser.close()
