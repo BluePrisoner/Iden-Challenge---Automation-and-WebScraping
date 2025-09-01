@@ -47,7 +47,7 @@ async def main(force_login: bool = False, output_file: Optional[str] = None):
         await goto_inventory_section(page, settings, selectors)
 
         # Scrape product data
-        products = await scrape_cards(page, settings)
+        products = await scrape_cards(page,selectors, settings)
 
         # Export results
         output_path = output_file or settings["output_file"]

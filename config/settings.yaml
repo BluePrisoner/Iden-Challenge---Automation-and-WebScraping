@@ -15,7 +15,7 @@ storage_state_file: "data/storage_state.json"
 
 # Pagination strategy
 # Options: "next_button", "load_more", "infinite_scroll"
-pagination: "next_button"
+pagination: "infinite_scroll"
 
 
 

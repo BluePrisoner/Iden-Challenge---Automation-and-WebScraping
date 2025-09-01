@@ -23,10 +23,15 @@ async def test_basic_flow():
         # ✅ Use the existing page, not browser
         #page = await goto_inventory_section(page, settings, selectors)
 
-        data = await scrape_cards(page, settings)
+        data = await scrape_cards(page,selectors, settings)
 
         assert isinstance(data, list)
         assert all(isinstance(row, dict) for row in data)
+
+        print("\nScraped Products:")
+        for product in data:
+            print(product)
+
 
         await page.pause()
 
