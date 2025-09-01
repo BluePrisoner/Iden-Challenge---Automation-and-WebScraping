@@ -11,13 +11,6 @@ login:
   inventory_section: "button:has-text('Inventory Section')"
 
 
-
-navigation:
-  start_journey: 'button:has-text("Start Journey")'
-  continue_search: 'button:has-text("Continue Search")'
-  inventory_section: 'button:has-text("Inventory Section")'
-  show_product_table: 'button:has-text("Show Product Table")'
-
 product_card: "div.rounded-lg.border.bg-card"   # wrapper for each product
 
 title: "h3.font-semibold"                       # product name
@@ -31,16 +24,6 @@ weight: "dt:has-text('Weight') + dd"
 composition: "dt:has-text('Composition:') + dd"
 updated: "div.items-center span"                # footer updated date
 
-
-table:
-  container: 'table'
-  headers: 'table thead tr th'
-  rows: 'table tbody tr'
-  cells: 'td'
-
-pagination:
-  next_button: 'button:has-text("Next")'
-  load_more: 'button:has-text("Load More")'
 
 
 

@@ -1,77 +1,113 @@
-# src/scrape_cards.py
-import asyncio
-from src.utils import log
-
-from playwright.async_api import Page
-
 import json
+import asyncio
 from pathlib import Path
+import re
+
 
 async def scrape_cards(page, selectors, settings):
     """
-    Scrape visible product cards and return a list of dicts.
-    - Scopes all queries inside each card element (no strict-mode errors).
-    - Prints results to terminal.
-    - Writes to settings['output_file'] if provided.
+    Scrape all products with infinite scroll until total count is reached.
+    Optimized: only scrape new cards, faster scrolling, adaptive waiting.
     """
 
-    # Fallback CSS for the card if selectors file doesn't provide one
     product_card_sel = selectors.get("product_card", "div.rounded-lg.border.bg-card")
+    total_sel = selectors.get(
+        "total_products", "div.text-sm.text-muted-foreground"
+    )
 
-    # Wait for at least one card to be present
-    await page.wait_for_selector(product_card_sel)
+    # --- 1. Get total count ---
+    await page.wait_for_selector(total_sel)
 
-    cards = page.locator(product_card_sel)
-    count = await cards.count()
+    total_locator = page.locator(
+        total_sel, has_text=re.compile(r"^Showing \d+ of \d+ products")
+    )
+    total_text = await total_locator.first.inner_text()
+
+    try:
+        total_count = int(total_text.split("of")[-1].split("products")[0].strip())
+    except Exception:
+        total_count = None
+    print(f"📦 Total products expected: {total_count}")
+
     results = []
+    seen_ids = set()
+    scraped_count = 0  # how many we’ve already processed
 
-    for i in range(count):
-        card = cards.nth(i)
+    # --- 2. Infinite scroll loop ---
+    while True:
+        cards = page.locator(product_card_sel)
+        total_cards = await cards.count()
 
-        # Extract purely relative to the card node (no page-wide matches)
-        data = await card.evaluate(
-            """(el) => {
-                const getText = (sel) => el.querySelector(sel)?.textContent?.trim() || "";
+        # Scrape only *new* cards
+        for i in range(scraped_count, total_cards):
+            card = cards.nth(i)
+            data = await card.evaluate(
+                """(el) => {
+                    const getText = (sel) => el.querySelector(sel)?.textContent?.trim() || "";
 
-                const title     = getText("h3.font-semibold");
-                const category  = getText("div.inline-flex");
-                const idRaw     = getText("p.text-xs.text-muted-foreground.font-mono"); // e.g. "ID: 0"
-                const id        = idRaw.replace(/^ID:\\s*/, "");
+                    const title     = getText("h3.font-semibold");
+                    const category  = getText("div.inline-flex");
+                    const idRaw     = getText("p.text-xs.text-muted-foreground.font-mono");
+                    const id        = idRaw.replace(/^ID:\\s*/, "");
 
-                // Collect all <dt>/<dd> pairs inside this card
-                const details = {};
-                el.querySelectorAll("dl div.flex").forEach(row => {
-                  const k = row.querySelector("dt")?.textContent?.trim().replace(/:$/, "") || "";
-                  const v = row.querySelector("dd")?.textContent?.trim() || "";
-                  if (k) details[k] = v;
-                });
+                    const details = {};
+                    el.querySelectorAll("dl div.flex").forEach(row => {
+                      const k = row.querySelector("dt")?.textContent?.trim().replace(/:$/, "") || "";
+                      const v = row.querySelector("dd")?.textContent?.trim() || "";
+                      if (k) details[k] = v;
+                    });
 
-                const updated = getText("div.items-center span");
+                    const updated = getText("div.items-center span");
 
-                // Normalize keys (no nested object, as requested)
-                return {
-                  id,
-                  title,
-                  category,
-                  cost: details["Cost"] || "",
-                  details: details["Details"] || "",
-                  inventory: details["Inventory"] || "",
-                  modified: details["Modified"] || "",
-                  weight_kg: details["Weight (kg)"] || "",
-                  composition: details["Composition"] || "",
-                  updated
-                };
-            }"""
-        )
+                    return {
+                      id,
+                      title,
+                      category,
+                      cost: details["Cost"] || "",
+                      details: details["Details"] || "",
+                      inventory: details["Inventory"] || "",
+                      modified: details["Modified"] || "",
+                      weight_kg: details["Weight (kg)"] || "",
+                      composition: details["Composition"] || "",
+                      updated
+                    };
+                }"""
+            )
 
-        results.append(data)
+            if data["id"] and data["id"] not in seen_ids:
+                seen_ids.add(data["id"])
+                results.append(data)
 
-    # Print to terminal
-    print("\nScraped Products:")
-    for r in results:
+        scraped_count = total_cards
+        print(f"✅ Scraped so far: {len(results)} / {total_count or '???'}")
+
+        # Stop if done
+        if total_count and len(results) >= total_count:
+            break
+
+        # --- 3. Scroll down in chunks ---
+        await page.evaluate("window.scrollBy(0, window.innerHeight * 6)")
+        await asyncio.sleep(0.3)
+
+        # --- 4. Check if new items loaded ---
+        new_count = await cards.count()
+        if new_count == scraped_count:
+            try:
+                await page.wait_for_function(
+                    f"document.querySelectorAll('{product_card_sel}').length > {scraped_count}",
+                    timeout=1500
+                )
+            except:
+                print("⚠️ No new products after scroll, stopping.")
+                break
+
+    # --- 5. Print sample results ---
+    print("\nScraped Products (first 10):")
+    for r in results[:10]:
         print(r)
+    print(f"... total {len(results)} products scraped")
 
-    # Save to JSON if configured
+    # --- 6. Save JSON ---
     output_file = settings.get("output_file")
     if output_file:
         out_path = Path(output_file)
