@@ -14,20 +14,20 @@ from src.utils import log, save_storage_state
 
 
 def load_config():
-    """Load settings and selectors from YAML + environment variables."""
+    
     with open("config/settings.yaml", "r", encoding="utf-8") as f:
         settings = yaml.safe_load(f)
 
     with open("config/selectors.yaml", "r", encoding="utf-8") as f:
         selectors = yaml.safe_load(f)
 
-    # Load .env
+   
     load_dotenv()
 
     settings["username"] = os.getenv("APP_USERNAME")
     settings["password"] = os.getenv("APP_PASSWORD")
     settings["base_url"] = os.getenv("BASE_URL")
-    settings["github_repo_url"] = os.getenv("GITHUB_REPO_URL")
+
 
     return settings, selectors
 
@@ -45,8 +45,7 @@ async def main(force_login: bool = True, output_file: Optional[str] = None):
         # Scrape product data
         products = await scrape_cards(page,selectors, settings)
 
-        # Export results
-        # --- 6. Save JSON ---
+        
         output_file = settings.get("output_file")
         if output_file:
             out_path = Path(output_file)

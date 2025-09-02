@@ -13,8 +13,6 @@ output_file: "data/output/products.json"
 # Session state
 storage_state_file: "data/storage_state.json"
 
-# Pagination strategy
-# Options: "next_button", "load_more", "infinite_scroll"
 pagination: "infinite_scroll"
 
 

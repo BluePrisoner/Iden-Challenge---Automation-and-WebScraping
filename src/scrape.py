@@ -2,13 +2,10 @@ import json
 import asyncio
 from pathlib import Path
 import re
+from tqdm.asyncio import tqdm
 
 
 async def scrape_cards(page, selectors, settings):
-    """
-    Scrape all products with infinite scroll until total count is reached.
-    Optimized: only scrape new cards, faster scrolling, adaptive waiting.
-    """
 
     product_card_sel = selectors.get("product_card", "div.rounded-lg.border.bg-card")
     total_sel = selectors.get(
@@ -30,18 +27,21 @@ async def scrape_cards(page, selectors, settings):
 
     if total_count==0:
         total_count = 3547
-    print(f"📦 Total products expected: {total_count}")
+    print(f"Total products expected: {total_count}")
 
     results = []
     seen_ids = set()
-    scraped_count = 0  # how many we’ve already processed
+    scraped_count = 0 
 
-    # --- 2. Infinite scroll loop ---
+    pbar = tqdm(total=total_count, desc="Scraping Products", unit="product")
+
+
+
     while True:
         cards = page.locator(product_card_sel)
         total_cards = await cards.count()
 
-        # Scrape only *new* cards
+        
         for i in range(scraped_count, total_cards):
             card = cards.nth(i)
             data = await card.evaluate(
@@ -80,19 +80,20 @@ async def scrape_cards(page, selectors, settings):
             if data["id"] and data["id"] not in seen_ids:
                 seen_ids.add(data["id"])
                 results.append(data)
+                pbar.update(1)
 
         scraped_count = total_cards
-        print(f"✅ Scraped so far: {len(results)} / {total_count or '???'}")
+        # print(f"Scraped so far: {len(results)} / {total_count or '???'}")
 
-        # Stop if done
+        
         if total_count and len(results) >= total_count:
             break
 
-        # --- 3. Scroll down in chunks ---
+    
         await page.evaluate("window.scrollBy(0, window.innerHeight * 6)")
         await asyncio.sleep(0.3)
 
-        # --- 4. Check if new items loaded ---
+        
         new_count = await cards.count()
         if new_count == scraped_count:
             try:
@@ -101,18 +102,12 @@ async def scrape_cards(page, selectors, settings):
                     timeout=1500
                 )
             except:
-                print("⚠️ No new products after scroll, stopping.")
+                print("No new products after scroll, stopping.")
                 break
     
-        # --- 3. Trim results if overshoot ---
+    
     if total_count and len(results) > total_count:
         results = results[:total_count]
-        print(f"⚠️ Trimmed to {total_count} products (overshoot fixed)")
-
-    # --- 5. Print sample results ---
-    print("\nScraped Products (first 10):")
-    for r in results[:10]:
-        print(r)
-    print(f"... total {len(results)} products scraped")
+        print(f"Trimmed to {total_count} products (overshoot fixed)")
 
     return results

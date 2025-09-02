@@ -5,7 +5,6 @@ from src.utils import log, save_storage_state
 
 
 async def perform_login(page: Page, settings: dict, selectors: dict):
-    """Perform login and navigate through the challenge setup."""
     log("Performing login...")
 
     # Go directly to login page
@@ -47,20 +46,15 @@ async def perform_login(page: Page, settings: dict, selectors: dict):
         await page.wait_for_selector(selectors["login"]["inventory_section"], timeout=10000)
         await page.click(selectors["login"]["inventory_section"])
         log("Clicked 'Inventory Section'")
-        log("Login successful. 'Inventory Section' button found.")
+        log("Login successful.")
     except TimeoutError:
         await page.screenshot(path="login_failed.png")
         raise RuntimeError("Login failed: success indicator not found.")
 
-    # ✅ Capture cookies, localStorage, and sessionStorage for debugging
+    # Capture cookies, localStorage, and sessionStorage for debugging
     cookies = await page.context.cookies()
     local_storage = await page.evaluate("JSON.stringify(localStorage)")
     session_storage = await page.evaluate("JSON.stringify(sessionStorage)")
-
-    # Print for debug
-    print("Cookies:", json.dumps(cookies, indent=2))
-    print("LocalStorage:", local_storage)
-    print("SessionStorage:", session_storage)
 
     return {
         "cookies": cookies,
@@ -75,10 +69,6 @@ async def ensure_session(
     selectors: dict,
     force_login: bool = True,
 ) -> tuple[BrowserContext, Page]:
-    """
-    Ensure a logged-in session is available.
-    Always returns the same Page so no extra tabs are opened.
-    """
     storage_file = settings["storage_state_file"]
 
     if not force_login and os.path.exists(storage_file):
@@ -104,7 +94,7 @@ async def ensure_session(
     # Wait for app fully loaded
     await page.wait_for_load_state("networkidle")
 
-    # Save state
+    
     os.makedirs(os.path.dirname(storage_file), exist_ok=True)
     await save_storage_state(context, page, storage_file)
     log(f"Session saved to {storage_file}")
