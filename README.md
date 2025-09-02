@@ -4,37 +4,6 @@ An **automated product scraper** built using **Python** + **Playwright** to extr
 It supports **infinite scrolling**, **session persistence**, and exports data to `products.json`.
 
 ---
-
-## **📂 Project Structure**
-playwright-product-scraper/
-├── README.md                 # 📘 Project documentation
-├── requirements.txt          # 📦 Python dependencies
-├── .gitignore                # 🚫 Ignored files (e.g., storage_state.json, .env, __pycache__)
-├── .env                      # 🔑 Environment variables (not committed)
-│
-├── config/
-│   ├── settings.yaml         # 🌐 Base URLs & configuration
-│   └── selectors.yaml        # 🎯 All CSS selectors & locators
-│
-├── data/
-│   ├── output/
-│   │   └── products.json     # 🛒 Exported product data (auto-generated)
-│   └── storage_state.json    # 🔐 Saved browser session (auto-generated)
-│
-├── src/
-│   ├── main.py               # 🚀 Entry point — orchestrates the scraper
-│   ├── auth.py               # 🔑 Handles login & session management
-│   ├── scrape.py             # 🕵️ Scraping logic + infinite scroll
-│   ├── utils.py              # 🛠️ Helper functions, logging, waits
-│
-└── tests/
-    └── test_smoke.py         # ✅ Smoke tests for core scraping flow
-
-
-
-yaml
-Copy code
-
 ---
 
 ## **⚡ Features**
