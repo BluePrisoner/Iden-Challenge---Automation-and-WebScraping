@@ -6,26 +6,30 @@ It supports **infinite scrolling**, **session persistence**, and exports data to
 ---
 
 ## **📂 Project Structure**
-
 playwright-product-scraper/
-├─ README.md # 📘 Project documentation
-├─ requirements.txt # 📦 Python dependencies
-├─ .gitignore # 🚫 Ignored files (e.g. storage_state.json, .env)
-├─ .env # 🔑 Environment variables (not committed)
-├─ config/
-│ ├─ settings.yaml # Base URLs & configuration
-│ └─ selectors.yaml # All CSS selectors & locators
-├─ data/
-│ ├─ output/
-│ │ └─ products.json # Exported product data (auto-generated)
-│ └─ storage_state.json # Saved browser session (auto-generated)
-├─ src/
-│ ├─ main.py # Entry point — orchestrates the scraper
-│ ├─ auth.py # Handles login & session management
-│ ├─ scrape.py # Scraping logic + infinite scroll
-│ ├─ utils.py # Helper functions, logging, waits
-└─ tests/
-└─ test_smoke.py # Smoke tests for core scraping flow
+├── README.md                 # 📘 Project documentation
+├── requirements.txt          # 📦 Python dependencies
+├── .gitignore                # 🚫 Ignored files (e.g., storage_state.json, .env, __pycache__)
+├── .env                      # 🔑 Environment variables (not committed)
+│
+├── config/
+│   ├── settings.yaml         # 🌐 Base URLs & configuration
+│   └── selectors.yaml        # 🎯 All CSS selectors & locators
+│
+├── data/
+│   ├── output/
+│   │   └── products.json     # 🛒 Exported product data (auto-generated)
+│   └── storage_state.json    # 🔐 Saved browser session (auto-generated)
+│
+├── src/
+│   ├── main.py               # 🚀 Entry point — orchestrates the scraper
+│   ├── auth.py               # 🔑 Handles login & session management
+│   ├── scrape.py             # 🕵️ Scraping logic + infinite scroll
+│   ├── utils.py              # 🛠️ Helper functions, logging, waits
+│
+└── tests/
+    └── test_smoke.py         # ✅ Smoke tests for core scraping flow
+
 
 yaml
 Copy code
@@ -66,7 +70,6 @@ Copy code
 BASE_URL=https://example.com
 APP_USERNAME=your_username
 APP_PASSWORD=your_password
-GITHUB_REPO_URL=https://github.com/your-repo
 ⚠️ Note: .env is ignored in git for security reasons.
 
 🚀 Running the Scraper
@@ -138,8 +141,7 @@ Keep your .env secure — never commit it.
 If scraping slows down, increase scroll speed in scrape.py.
 
 👨‍💻 Author
-Your Name
-💼 GitHub: your-username
-📧 Email: youremail@example.com
+💼 GitHub: BluePrisoner
+
 
 
