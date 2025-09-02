@@ -22,43 +22,49 @@ It supports **infinite scrolling**, **session persistence**, and exports data to
 ```bash
 git clone https://github.com/your-username/playwright-product-scraper.git
 cd playwright-product-scraper
-2. Create & Activate Virtual Environment
-bash
-Copy code
+```
+
+
+### **2. Create & Activate Virtual Environment**
+```bash
 python -m venv .venv
 source .venv/bin/activate     # On Mac/Linux
 .venv\Scripts\activate        # On Windows
-3. Install Dependencies
-bash
-Copy code
+```
+
+### **3. Install Dependencies**
+```bash
 pip install -r requirements.txt
+```
+
 🔑 Configure Environment Variables
 Create a .env file in the project root:
-
-env
-Copy code
+```bash
 BASE_URL=https://example.com
 APP_USERNAME=your_username
 APP_PASSWORD=your_password
+```
 ⚠️ Note: .env is ignored in git for security reasons.
 
 🚀 Running the Scraper
 Run the main scraper:
 
-bash
-Copy code
+```bash
 python -m src.main
 Optional Arguments
 Argument	Description	Example
 --force-login	Forces fresh login (ignores session)	python -m src.main --force-login
 --output	Custom JSON output path	python -m src.main --output data/products.json
+```
 
 🧪 Running Tests
 Run smoke tests using pytest:
 
-bash
-Copy code
+```bash
+
 pytest tests/test_smoke.py -s -v
+```
+
 This test will:
 
 Log in to the website (or reuse session)
@@ -72,13 +78,12 @@ Verify correct structure of the output
 📦 Output
 After running the scraper, results are saved at:
 
-bash
-Copy code
+```bash
 data/output/products.json
+```
 Example of extracted product data:
 
-json
-Copy code
+```json
 [
   {
     "id": "P1234",
@@ -91,14 +96,16 @@ Copy code
     "updated": "2025-09-02"
   }
 ]
+```
+
 🗝️ Session Management
 First run → logs in using credentials from .env
 
 Saves session to:
 
-bash
-Copy code
+```bash
 data/storage_state.json
+```
 On future runs, Playwright reuses the session for faster scraping
 
 Use --force-login to bypass the saved session
